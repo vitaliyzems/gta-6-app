@@ -1,7 +1,6 @@
 import { SubmitHandler, useForm } from 'react-hook-form';
 import styles from './Home.module.css';
-
-const isSuccess = false;
+import { useState } from 'react';
 
 interface IFormState {
   name: string;
@@ -9,10 +8,29 @@ interface IFormState {
 }
 
 function Home() {
-  const { register, handleSubmit } = useForm<IFormState>();
+  const { register, handleSubmit, reset } = useForm<IFormState>();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const onSubmit: SubmitHandler<IFormState> = (data) => {
-    console.log(data);
+  const onSubmit: SubmitHandler<IFormState> = async (data) => {
+    setIsLoading(true);
+    const response = await fetch('http://localhost:9999/api', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (response.ok) {
+      console.log(await response.json());
+      setIsSuccess(true);
+      setIsLoading(false);
+      reset();
+      return;
+    }
+    setIsSuccess(false);
+    setIsLoading(false);
+    console.log({ status: response.status, message: response.statusText });
   };
   return (
     <div className={styles.wrapper}>
@@ -32,7 +50,9 @@ function Home() {
               placeholder="Введите Email"
               {...register('email', { required: '' })}
             />
-            <button>Подписаться</button>
+            <button disabled={isLoading}>
+              {isLoading ? 'Загрузка...' : 'Подписаться'}
+            </button>
           </>
         )}
       </form>
